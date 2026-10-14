@@ -17,7 +17,7 @@ cp -r skills/self-review ~/.claude/skills/      # all projects
 # or: cp -r skills/self-review .claude/skills/  # one project
 ```
 
-**Claude apps:** zip the `self-review` folder and upload it under Settings → Capabilities → Skills.
+**Claude apps:** zip the `self-review` folder and upload it under Customize → Skills (+ → Create skill → Upload a skill). Code execution must be on in Settings → Capabilities.
 
 ## Try it
 

@@ -16,7 +16,7 @@ cp -r skills/repurpose ~/.claude/skills/      # all projects
 # or: cp -r skills/repurpose .claude/skills/  # one project
 ```
 
-**Claude apps:** zip the `repurpose` folder and upload it under Settings → Capabilities → Skills.
+**Claude apps:** zip the `repurpose` folder and upload it under Customize → Skills (+ → Create skill → Upload a skill). Code execution must be on in Settings → Capabilities.
 
 ## Try it
 

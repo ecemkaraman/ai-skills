@@ -21,7 +21,7 @@ cp -r skills/reel-script ~/.claude/skills/      # all projects
 # or: cp -r skills/reel-script .claude/skills/  # one project
 ```
 
-**Claude apps:** zip the `reel-script` folder and upload it under Settings → Capabilities → Skills.
+**Claude apps:** zip the `reel-script` folder and upload it under Customize → Skills (+ → Create skill → Upload a skill). Code execution must be on in Settings → Capabilities.
 
 ## Try it
 

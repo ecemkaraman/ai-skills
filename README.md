@@ -34,7 +34,7 @@ Use `~/.claude/skills/` for all projects, or `.claude/skills/` inside a project 
 Claude picks a skill automatically when your request matches its description, or you can
 call it by name.
 
-**Claude apps:** zip a skill folder and upload it under Settings → Capabilities → Skills.
+**Claude apps:** zip a skill folder and upload it under Customize → Skills (+ → Create skill → Upload a skill). Code execution must be on in Settings → Capabilities.
 
 Some skills need Python or a connector. Each skill's README lists what it needs.
 

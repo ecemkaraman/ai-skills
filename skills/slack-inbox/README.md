@@ -20,7 +20,7 @@ cp -r skills/slack-inbox ~/.claude/skills/      # all projects
 # or: cp -r skills/slack-inbox .claude/skills/  # one project
 ```
 
-**Claude apps:** zip the `slack-inbox` folder and upload it under Settings → Capabilities → Skills.
+**Claude apps:** zip the `slack-inbox` folder and upload it under Customize → Skills (+ → Create skill → Upload a skill). Code execution must be on in Settings → Capabilities.
 
 On first run it asks which channels to process and creates `slack-inbox.config.md`. Edit
 that file to change channels or headings.

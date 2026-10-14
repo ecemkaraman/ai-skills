@@ -1,0 +1,1093 @@
+# Daily Intelligence Digest: source registry
+#
+# Every endpoint below returned HTTP 200 with in-window items when probed on 2026-09-14.
+# Re-probe with: python scripts/harvest_feeds.py --health
+#
+# tier    1 primary/original · 2 high-quality reporting · 3 specialist
+#         4 curated/analyst · 5 community signal
+# domains ai · business · markets · econ · geo · culture · science
+# weight  selection prior, 0.0-2.0. Reserved for the V2 feedback loop; leave at 1.0
+#         unless a source has earned otherwise.
+# cap     max items taken from this source per run, applied after window filtering
+# cadence daily · weekly · sporadic — sporadic sources are never treated as gaps
+
+config:
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+  # US federal endpoints require a declared agent with contact details. This is
+  # their published access policy, not a bypass. BLS and SEC return 403 without it.
+  gov_user_agent: "daily-digest/1.0 (you@example.com)"  # replace with your own contact email
+  timeout_seconds: 20
+  max_workers: 24
+  window_hours: 24
+  timezone: "America/New_York"
+  default_cap: 20
+
+sources:
+
+  # ---------------------------------------------------------------------------
+  # Cross-domain spine. Fetched every run. These do the heaviest lifting:
+  # Techmeme pre-clusters syndicated tech coverage, and the Google News
+  # `when:1d site:` queries give 24h headline recall for publishers whose own
+  # feeds are dead or paywalled (Reuters, AP, WSJ, Bloomberg, FT, Economist).
+  #
+  # Google News items are HEADLINE + TIMESTAMP ONLY. They establish that an event
+  # occurred and when. They can never be quoted, can never support a number, and
+  # can never carry a story into Today's Brief on their own. See SKILL.md, step 4.
+  # ---------------------------------------------------------------------------
+
+  - id: techmeme
+    name: Techmeme
+    url: https://www.techmeme.com/feed.xml
+    tier: 3
+    domains: [ai, business, culture]
+    cap: 30
+    cadence: daily
+    notes: Clusters syndicated coverage into one item. Primary dedup backbone.
+
+  - id: gnews_reuters
+    name: Reuters (via Google News 24h)
+    url: "https://news.google.com/rss/search?q=when:1d+site:reuters.com&hl=en-US&gl=US&ceid=US:en"
+    tier: 2
+    domains: [geo, markets, econ, business]
+    cap: 35
+    cadence: daily
+    headline_only: true
+
+  - id: gnews_ap
+    name: Associated Press (via Google News 24h)
+    url: "https://news.google.com/rss/search?q=when:1d+site:apnews.com&hl=en-US&gl=US&ceid=US:en"
+    tier: 2
+    domains: [geo, econ, culture]
+    cap: 30
+    cadence: daily
+    headline_only: true
+    exclude_title: "scores|standings|stats & news|odds|box score"
+    notes: AP's own feeds return 403 to non-browser clients.
+
+  - id: gnews_wsj
+    name: Wall Street Journal (via Google News 24h)
+    url: "https://news.google.com/rss/search?q=when:1d+site:wsj.com&hl=en-US&gl=US&ceid=US:en"
+    tier: 2
+    domains: [markets, business, econ]
+    cap: 25
+    cadence: daily
+    headline_only: true
+
+  - id: gnews_bloomberg
+    name: Bloomberg (via Google News 24h)
+    url: "https://news.google.com/rss/search?q=when:1d+site:bloomberg.com&hl=en-US&gl=US&ceid=US:en"
+    tier: 2
+    domains: [markets, business, econ]
+    cap: 25
+    cadence: daily
+    headline_only: true
+
+  - id: gnews_ft
+    name: Financial Times (via Google News 24h)
+    url: "https://news.google.com/rss/search?q=when:1d+site:ft.com&hl=en-US&gl=US&ceid=US:en"
+    tier: 2
+    domains: [markets, econ, geo, business]
+    cap: 25
+    cadence: daily
+    headline_only: true
+    exclude_title: "net asset value|voting rights|holding\\(s\\) in company|own shares|pdmr"
+
+  - id: gnews_economist
+    name: The Economist (via Google News 24h)
+    url: "https://news.google.com/rss/search?q=when:1d+site:economist.com&hl=en-US&gl=US&ceid=US:en"
+    tier: 2
+    domains: [econ, geo, business]
+    cap: 15
+    cadence: daily
+    headline_only: true
+
+  - id: hn_front
+    name: Hacker News (150+ points)
+    url: "https://hnrss.org/frontpage?points=150"
+    tier: 5
+    domains: [ai, business, culture, science]
+    cap: 20
+    cadence: daily
+    notes: Early developer signal. Never authoritative for a factual claim.
+
+  # ---------------------------------------------------------------------------
+  # 1. AI: Technical Frontier
+  # ---------------------------------------------------------------------------
+
+  - id: openai_news
+    name: OpenAI
+    url: https://openai.com/news/rss.xml
+    tier: 1
+    domains: [ai, business]
+    cap: 10
+    cadence: daily
+
+  - id: deepmind
+    name: Google DeepMind
+    url: https://deepmind.google/blog/rss.xml
+    tier: 1
+    domains: [ai, science]
+    cap: 10
+    cadence: weekly
+
+  - id: google_ai
+    name: Google AI Blog
+    url: https://blog.google/technology/ai/rss/
+    tier: 1
+    domains: [ai]
+    cap: 10
+    cadence: daily
+
+  - id: google_research
+    name: Google Research
+    url: https://research.google/blog/rss/
+    tier: 1
+    domains: [ai, science]
+    cap: 8
+    cadence: weekly
+
+  - id: huggingface
+    name: Hugging Face
+    url: https://huggingface.co/blog/feed.xml
+    tier: 1
+    domains: [ai]
+    cap: 12
+    cadence: daily
+
+  - id: mistral
+    name: Mistral AI
+    url: https://mistral.ai/rss.xml
+    tier: 1
+    domains: [ai]
+    cap: 8
+    cadence: weekly
+
+  - id: aws_ml
+    name: AWS Machine Learning
+    url: https://aws.amazon.com/blogs/machine-learning/feed/
+    tier: 1
+    domains: [ai, business]
+    cap: 10
+    cadence: daily
+
+  - id: nvidia
+    name: NVIDIA
+    url: https://blogs.nvidia.com/feed/
+    tier: 1
+    domains: [ai, business]
+    cap: 10
+    cadence: daily
+
+  - id: arxiv_cl
+    name: arXiv cs.CL
+    url: http://export.arxiv.org/rss/cs.CL
+    tier: 1
+    domains: [ai]
+    cap: 10
+    cadence: daily
+    notes: Very high volume. Surfaces only on an extraordinary claim, labelled unreplicated.
+
+  - id: arxiv_lg
+    name: arXiv cs.LG
+    url: http://export.arxiv.org/rss/cs.LG
+    tier: 1
+    domains: [ai]
+    cap: 10
+    cadence: daily
+    notes: Very high volume. Surfaces only on an extraordinary claim, labelled unreplicated.
+
+  - id: vllm
+    name: vLLM releases
+    url: https://github.com/vllm-project/vllm/releases.atom
+    tier: 1
+    domains: [ai]
+    cap: 5
+    cadence: weekly
+    notes: Inference capability and cost signal.
+
+  - id: llamacpp
+    name: llama.cpp releases
+    url: https://github.com/ggml-org/llama.cpp/releases.atom
+    tier: 1
+    domains: [ai]
+    cap: 5
+    cadence: daily
+    notes: Local and edge inference signal.
+
+  - id: ollama
+    name: Ollama releases
+    url: https://github.com/ollama/ollama/releases.atom
+    tier: 1
+    domains: [ai]
+    cap: 5
+    cadence: weekly
+
+  - id: simonwillison
+    name: Simon Willison
+    url: https://simonwillison.net/atom/everything/
+    tier: 4
+    domains: [ai]
+    cap: 15
+    cadence: daily
+    notes: Highest-signal individual source in the registry. Tests claims himself.
+
+  - id: interconnects
+    name: Interconnects (Nathan Lambert)
+    url: https://www.interconnects.ai/feed
+    tier: 4
+    domains: [ai]
+    cap: 6
+    cadence: weekly
+
+  - id: latent_space
+    name: Latent Space
+    url: https://www.latent.space/feed
+    tier: 4
+    domains: [ai, business]
+    cap: 6
+    cadence: weekly
+
+  - id: import_ai
+    name: Import AI (Jack Clark)
+    url: https://importai.substack.com/feed
+    tier: 4
+    domains: [ai, geo]
+    cap: 4
+    cadence: weekly
+    notes: Research meets policy and geopolitics.
+
+  - id: ahead_of_ai
+    name: Ahead of AI (Sebastian Raschka)
+    url: https://magazine.sebastianraschka.com/feed
+    tier: 4
+    domains: [ai]
+    cap: 4
+    cadence: sporadic
+
+  - id: the_zvi
+    name: Don't Worry About the Vase (Zvi)
+    url: https://thezvi.substack.com/feed
+    tier: 4
+    domains: [ai]
+    cap: 4
+    cadence: weekly
+    notes: Opinion-dense. Useful for what the field is arguing about, never for facts.
+
+  - id: transformer_news
+    name: Transformer
+    url: https://www.transformernews.ai/feed
+    tier: 3
+    domains: [ai, geo]
+    cap: 8
+    cadence: daily
+    notes: AI policy and safety reporting.
+
+  - id: ai_snake_oil
+    name: AI Snake Oil
+    url: https://www.aisnakeoil.com/feed
+    tier: 4
+    domains: [ai]
+    cap: 4
+    cadence: sporadic
+    notes: Deflation of overclaimed results. Useful counterweight to launch coverage.
+
+  - id: gary_marcus
+    name: Gary Marcus
+    url: https://garymarcus.substack.com/feed
+    tier: 4
+    domains: [ai]
+    cap: 4
+    cadence: daily
+    weight: 0.7
+    notes: Consistent critical prior. Include for the argument, never as evidence.
+
+  - id: last_week_in_ai
+    name: Last Week in AI
+    url: https://lastweekin.ai/feed
+    tier: 4
+    domains: [ai]
+    cap: 4
+    cadence: weekly
+
+  - id: dwarkesh
+    name: Dwarkesh Podcast
+    url: https://www.dwarkesh.com/feed
+    tier: 4
+    domains: [ai, econ]
+    cap: 4
+    cadence: sporadic
+
+  - id: lesswrong
+    name: LessWrong
+    url: https://www.lesswrong.com/feed.xml
+    tier: 5
+    domains: [ai]
+    cap: 8
+    cadence: daily
+    weight: 0.6
+
+  - id: pragmatic_engineer
+    name: The Pragmatic Engineer
+    url: https://newsletter.pragmaticengineer.com/feed
+    tier: 4
+    domains: [ai, business]
+    cap: 5
+    cadence: weekly
+    notes: Developer tooling and engineering org signal.
+
+  # Anthropic publishes no RSS. /rss.xml /feed.xml /news/rss /news/rss.xml /rss all 404
+  # as of 2026-09-14. Fetched as a page and parsed for dated links.
+  - id: anthropic
+    name: Anthropic
+    url: https://www.anthropic.com/news
+    tier: 1
+    domains: [ai, business]
+    fetch: page
+    link_pattern: "/news/[a-z0-9-]{8,}"
+    cap: 10
+    cadence: daily
+    notes: No feed exists. Page-scraped. Techmeme is the backstop if the scrape fails.
+
+  # ---------------------------------------------------------------------------
+  # 2. Business, Startups & Tech Landscape
+  # ---------------------------------------------------------------------------
+
+  - id: sec_8k
+    name: SEC EDGAR 8-K
+    url: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&count=40&output=atom"
+    tier: 1
+    domains: [business, markets]
+    gov: true
+    cap: 15
+    cadence: daily
+    no_cluster: true
+    notes: >
+      Requires declared user agent. Material events before they are reported. A structured
+      filing stream rather than headlines, so it is never clustered: every title has the
+      same shape and would otherwise merge into one meaningless group.
+
+  - id: the_information
+    name: The Information
+    url: https://www.theinformation.com/feed
+    tier: 2
+    domains: [business, ai]
+    cap: 15
+    cadence: daily
+    headline_only: true
+    notes: Feed carries headlines only; body is subscriber-gated. Strong scoop signal.
+
+  - id: stratechery
+    name: Stratechery (Ben Thompson)
+    url: https://stratechery.com/feed/
+    tier: 4
+    domains: [business, ai]
+    cap: 6
+    cadence: daily
+    notes: Strategy analysis. Attribute; do not restate as fact.
+
+  - id: techcrunch
+    name: TechCrunch
+    url: https://techcrunch.com/feed/
+    tier: 3
+    domains: [business, ai]
+    cap: 20
+    cadence: daily
+
+  - id: theverge
+    name: The Verge
+    url: https://www.theverge.com/rss/index.xml
+    tier: 3
+    domains: [business, ai, culture]
+    cap: 20
+    cadence: daily
+
+  - id: ars_technica
+    name: Ars Technica
+    url: https://feeds.arstechnica.com/arstechnica/index
+    tier: 3
+    domains: [ai, business, science]
+    cap: 15
+    cadence: daily
+
+  - id: mit_tech_review
+    name: MIT Technology Review
+    url: https://www.technologyreview.com/feed/
+    tier: 3
+    domains: [ai, science, business]
+    cap: 12
+    cadence: daily
+
+  - id: crunchbase
+    name: Crunchbase News
+    url: https://news.crunchbase.com/feed/
+    tier: 3
+    domains: [business]
+    cap: 10
+    cadence: daily
+    notes: Funding rounds. Only surfaces when strategically meaningful.
+
+  - id: newcomer
+    name: Newcomer (Eric Newcomer)
+    url: https://www.newcomer.co/feed
+    tier: 4
+    domains: [business]
+    cap: 6
+    cadence: weekly
+    notes: Venture capital dynamics.
+
+  - id: the_generalist
+    name: The Generalist
+    url: https://www.generalist.com/feed
+    tier: 4
+    domains: [business]
+    cap: 5
+    cadence: weekly
+
+  - id: exponential_view
+    name: Exponential View (Azeem Azhar)
+    url: https://www.exponentialview.co/feed
+    tier: 4
+    domains: [business, ai, econ]
+    cap: 6
+    cadence: weekly
+
+  - id: microsoft
+    name: Microsoft
+    url: https://blogs.microsoft.com/feed/
+    tier: 1
+    domains: [business, ai]
+    cap: 8
+    cadence: weekly
+
+  - id: meta_newsroom
+    name: Meta Newsroom
+    url: https://about.fb.com/news/feed/
+    tier: 1
+    domains: [business, ai, culture]
+    cap: 8
+    cadence: weekly
+
+  - id: chip_letter
+    name: The Chip Letter
+    url: https://thechipletter.substack.com/feed
+    tier: 4
+    domains: [ai, business]
+    cap: 5
+    cadence: weekly
+    notes: Semiconductor depth. Replaces SemiAnalysis, whose feed is stale.
+
+  - id: fabricated_knowledge
+    name: Fabricated Knowledge
+    url: https://www.fabricatedknowledge.com/feed
+    tier: 4
+    domains: [ai, business, markets]
+    cap: 5
+    cadence: sporadic
+    notes: Semiconductor and AI infrastructure economics.
+
+  - id: toms_hardware
+    name: Tom's Hardware
+    url: https://www.tomshardware.com/feeds/all
+    tier: 3
+    domains: [ai, business]
+    cap: 12
+    cadence: daily
+    weight: 0.8
+    notes: Chips and hardware. Occasionally credulous; verify before promoting.
+
+  - id: axios
+    name: Axios
+    url: https://www.axios.com/feeds/feed.rss
+    tier: 3
+    domains: [business, econ, geo, culture]
+    cap: 20
+    cadence: daily
+
+  - id: business_insider
+    name: Business Insider
+    url: https://www.businessinsider.com/rss
+    tier: 3
+    domains: [business, culture]
+    cap: 12
+    cadence: daily
+    weight: 0.7
+
+  # ---------------------------------------------------------------------------
+  # 3. Markets & Finance
+  # ---------------------------------------------------------------------------
+
+  - id: bloomberg_markets
+    name: Bloomberg Markets
+    url: https://feeds.bloomberg.com/markets/news.rss
+    tier: 2
+    domains: [markets, econ]
+    cap: 20
+    cadence: daily
+
+  - id: ft_home
+    name: Financial Times
+    url: https://www.ft.com/rss/home
+    tier: 2
+    domains: [markets, econ, geo, business]
+    cap: 15
+    cadence: daily
+
+  - id: cnbc
+    name: CNBC
+    url: "https://www.cnbc.com/id/100003114/device/rss/rss.html"
+    tier: 3
+    domains: [markets, business]
+    cap: 15
+    cadence: daily
+    weight: 0.8
+
+  - id: marketwatch
+    name: MarketWatch
+    url: https://feeds.content.dowjones.io/public/rss/mw_topstories
+    tier: 3
+    domains: [markets]
+    cap: 12
+    cadence: daily
+
+  - id: yahoo_finance
+    name: Yahoo Finance
+    url: https://finance.yahoo.com/news/rssindex
+    tier: 3
+    domains: [markets, business]
+    cap: 12
+    cadence: daily
+    weight: 0.7
+
+  - id: sherwood
+    name: Sherwood News
+    url: https://sherwood.news/rss.xml
+    tier: 3
+    domains: [markets, business, culture]
+    cap: 12
+    cadence: daily
+    notes: Free markets journalism that explains causation rather than quoting levels.
+
+  - id: calculated_risk
+    name: Calculated Risk
+    url: https://calculatedrisk.substack.com/feed
+    tier: 4
+    domains: [markets, econ]
+    cap: 8
+    cadence: daily
+    notes: Housing and labour market detail.
+
+  - id: the_overshoot
+    name: The Overshoot (Matthew Klein)
+    url: https://theovershoot.co/feed
+    tier: 4
+    domains: [markets, econ]
+    cap: 5
+    cadence: sporadic
+
+  - id: klement
+    name: Klement on Investing
+    url: https://klementoninvesting.substack.com/feed
+    tier: 4
+    domains: [markets]
+    cap: 5
+    cadence: daily
+
+  # ---------------------------------------------------------------------------
+  # 4. Economics & Policy
+  # ---------------------------------------------------------------------------
+
+  - id: fed_press
+    name: Federal Reserve
+    url: https://www.federalreserve.gov/feeds/press_all.xml
+    tier: 1
+    domains: [econ, markets]
+    cap: 12
+    cadence: daily
+
+  - id: bls
+    name: Bureau of Labor Statistics
+    url: https://www.bls.gov/feed/bls_latest.rss
+    tier: 1
+    domains: [econ]
+    gov: true
+    cap: 10
+    cadence: daily
+    notes: Requires declared user agent. Also the primary input to Next 24-72 Hours.
+
+  - id: bea
+    name: Bureau of Economic Analysis
+    url: https://apps.bea.gov/rss/rss.xml
+    tier: 1
+    domains: [econ]
+    gov: true
+    cap: 8
+    cadence: weekly
+
+  - id: ecb
+    name: European Central Bank
+    url: https://www.ecb.europa.eu/rss/press.html
+    tier: 1
+    domains: [econ, markets]
+    cap: 10
+    cadence: daily
+
+  - id: federal_register_ai
+    name: Federal Register (AI rulemaking)
+    url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bterm%5D=artificial+intelligence"
+    tier: 1
+    domains: [econ, ai, geo]
+    cap: 10
+    cadence: daily
+    notes: Regulation before it is reported on.
+
+  - id: ftc
+    name: Federal Trade Commission
+    url: https://www.ftc.gov/feeds/press-release.xml
+    tier: 1
+    domains: [econ, business]
+    cap: 8
+    cadence: weekly
+    notes: Antitrust and competition actions.
+
+  - id: eu_commission
+    name: European Commission
+    url: "https://ec.europa.eu/commission/presscorner/api/rss?language=en"
+    tier: 1
+    domains: [econ, geo, ai]
+    cap: 10
+    cadence: daily
+    exclude_title: "^daily news"
+
+  - id: politico
+    name: Politico
+    url: https://rss.politico.com/politics-news.xml
+    tier: 3
+    domains: [econ, geo]
+    cap: 12
+    cadence: daily
+
+  - id: marginal_revolution
+    name: Marginal Revolution
+    url: https://marginalrevolution.com/feed
+    tier: 4
+    domains: [econ, ai, culture]
+    cap: 10
+    cadence: daily
+
+  - id: noahpinion
+    name: Noahpinion
+    url: https://www.noahpinion.blog/feed
+    tier: 4
+    domains: [econ, geo]
+    cap: 6
+    cadence: daily
+
+  - id: employ_america
+    name: Employ America
+    url: https://www.employamerica.org/feed/
+    tier: 4
+    domains: [econ]
+    cap: 5
+    cadence: weekly
+
+  - id: conversable_economist
+    name: Conversable Economist
+    url: https://conversableeconomist.com/feed/
+    tier: 4
+    domains: [econ]
+    cap: 5
+    cadence: daily
+
+  # ---------------------------------------------------------------------------
+  # 5. Geopolitics & Global Affairs
+  # Registry deliberately weighted toward non-US-desk sources, because the failure
+  # mode here is a US-domestic view of global events.
+  # ---------------------------------------------------------------------------
+
+  - id: bbc_world
+    name: BBC World
+    url: https://feeds.bbci.co.uk/news/world/rss.xml
+    tier: 2
+    domains: [geo]
+    cap: 20
+    cadence: daily
+
+  - id: al_jazeera
+    name: Al Jazeera
+    url: https://www.aljazeera.com/xml/rss/all.xml
+    tier: 2
+    domains: [geo]
+    cap: 15
+    cadence: daily
+
+  - id: dw_news
+    name: Deutsche Welle
+    url: https://rss.dw.com/rdf/rss-en-world
+    tier: 2
+    domains: [geo, econ]
+    cap: 12
+    cadence: daily
+    notes: European desk.
+
+  - id: france24
+    name: France 24
+    url: https://www.france24.com/en/france/rss
+    tier: 2
+    domains: [geo]
+    cap: 12
+    cadence: daily
+
+  - id: scmp
+    name: South China Morning Post
+    url: "https://www.scmp.com/rss/91/feed"
+    tier: 2
+    domains: [geo, business, ai]
+    cap: 15
+    cadence: daily
+    notes: China desk. State-adjacent media environment; attribute carefully.
+
+  - id: gnews_nikkei
+    name: Nikkei Asia (via Google News 24h)
+    url: "https://news.google.com/rss/search?q=when:1d+site:asia.nikkei.com&hl=en-US&gl=US&ceid=US:en"
+    tier: 2
+    domains: [geo, business, markets]
+    cap: 12
+    cadence: daily
+    headline_only: true
+    notes: Asian supply chain and semiconductor coverage.
+
+  - id: the_diplomat
+    name: The Diplomat
+    url: https://thediplomat.com/feed/
+    tier: 3
+    domains: [geo]
+    cap: 12
+    cadence: daily
+    notes: Asia-Pacific analysis.
+
+  - id: war_on_the_rocks
+    name: War on the Rocks
+    url: https://warontherocks.com/feed/
+    tier: 3
+    domains: [geo]
+    cap: 10
+    cadence: daily
+    notes: Defence and strategy analysis. Attributed argument, not reporting.
+
+  - id: npr
+    name: NPR
+    url: https://feeds.npr.org/1001/rss.xml
+    tier: 2
+    domains: [geo, econ, culture]
+    cap: 12
+    cadence: daily
+
+  - id: rest_of_world
+    name: Rest of World
+    url: https://restofworld.org/feed/latest/
+    tier: 3
+    domains: [geo, culture, business, ai]
+    cap: 10
+    cadence: daily
+    notes: Technology outside the US and Europe. Reliably finds what US tech press misses.
+
+  - id: bellingcat
+    name: Bellingcat
+    url: https://www.bellingcat.com/feed/
+    tier: 3
+    domains: [geo]
+    cap: 5
+    cadence: sporadic
+    notes: Open-source verification. Useful for separating claim from fact.
+
+  # ---------------------------------------------------------------------------
+  # 6. Society, Culture & Media
+  # Thinnest domain by design. Expect it to be empty some mornings.
+  # ---------------------------------------------------------------------------
+
+  - id: platformer
+    name: Platformer (Casey Newton)
+    url: https://www.platformer.news/rss/
+    tier: 3
+    domains: [culture, business, ai]
+    cap: 8
+    cadence: daily
+    notes: Platform policy and its social consequences.
+
+  - id: embedded
+    name: Embedded (Kate Lindsay)
+    url: https://embedded.substack.com/feed
+    tier: 4
+    domains: [culture]
+    cap: 6
+    cadence: daily
+    notes: Internet culture. Best single source for a trend leaving its niche.
+
+  - id: pew_research
+    name: Pew Research Center
+    url: https://www.pewresearch.org/feed/
+    tier: 1
+    domains: [culture, econ]
+    cap: 8
+    cadence: weekly
+    notes: The measurable-behaviour evidence the culture inclusion bar requires.
+
+  - id: after_babel
+    name: After Babel
+    url: https://www.afterbabel.com/feed
+    tier: 4
+    domains: [culture]
+    cap: 4
+    cadence: sporadic
+    weight: 0.8
+    notes: Strong thesis, contested evidence. Attribute; never state as settled.
+
+  - id: variety
+    name: Variety
+    url: https://variety.com/feed/
+    tier: 3
+    domains: [culture, business]
+    cap: 10
+    cadence: daily
+
+  - id: hollywood_reporter
+    name: The Hollywood Reporter
+    url: https://www.hollywoodreporter.com/feed/
+    tier: 3
+    domains: [culture, business]
+    cap: 10
+    cadence: daily
+
+  - id: wired
+    name: Wired
+    url: https://www.wired.com/feed/rss
+    tier: 3
+    domains: [culture, ai, science]
+    cap: 12
+    cadence: daily
+    exclude_title: "^(the )?best |review:|deals?:|^shop |buying guide"
+
+  # ---------------------------------------------------------------------------
+  # 7. Science, Health & Planet
+  # ---------------------------------------------------------------------------
+
+  - id: nature
+    name: Nature
+    url: https://www.nature.com/nature.rss
+    tier: 1
+    domains: [science]
+    cap: 12
+    cadence: daily
+    notes: >
+      Rate limits aggressively and then answers every user agent with a challenge page.
+      Expect intermittent "blocked" status. Science, NEJM, STAT and Ars Science cover the
+      same ground, so a blocked Nature is not a coverage gap.
+
+  - id: science_mag
+    name: Science
+    url: https://www.science.org/rss/news_current.xml
+    tier: 1
+    domains: [science]
+    cap: 10
+    cadence: daily
+
+  - id: nejm
+    name: New England Journal of Medicine
+    url: "https://www.nejm.org/action/showFeed?jc=nejm&type=etoc&feed=rss"
+    tier: 1
+    domains: [science]
+    cap: 8
+    cadence: weekly
+
+  - id: quanta
+    name: Quanta Magazine
+    url: https://www.quantamagazine.org/feed/
+    tier: 3
+    domains: [science]
+    cap: 6
+    cadence: daily
+
+  - id: stat_news
+    name: STAT News
+    url: https://www.statnews.com/feed/
+    tier: 3
+    domains: [science, business]
+    cap: 10
+    cadence: daily
+    notes: Biotech and health policy.
+
+  - id: endpoints
+    name: Endpoints News
+    url: https://endpts.com/feed/
+    tier: 3
+    domains: [science, business]
+    cap: 10
+    cadence: daily
+    notes: Drug approvals and trial results.
+
+  - id: fda
+    name: FDA press releases
+    url: https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml
+    tier: 1
+    domains: [science, business]
+    gov: true
+    cap: 8
+    cadence: weekly
+
+  - id: science_news
+    name: Science News
+    url: https://www.sciencenews.org/feed
+    tier: 3
+    domains: [science]
+    cap: 10
+    cadence: daily
+
+  - id: ars_science
+    name: Ars Technica Science
+    url: https://feeds.arstechnica.com/arstechnica/science
+    tier: 3
+    domains: [science]
+    cap: 10
+    cadence: daily
+
+  - id: spacenews
+    name: SpaceNews
+    url: https://spacenews.com/feed/
+    tier: 3
+    domains: [science, business, geo]
+    cap: 8
+    cadence: daily
+
+  - id: esa
+    name: European Space Agency
+    url: https://www.esa.int/rssfeed/Our_Activities/Space_News
+    tier: 1
+    domains: [science]
+    cap: 6
+    cadence: weekly
+
+  - id: nasa
+    name: NASA
+    url: https://www.nasa.gov/news-release/feed/
+    tier: 1
+    domains: [science]
+    cap: 8
+    cadence: weekly
+    exclude_title: "^apod|astronomy picture"
+
+  - id: carbon_brief
+    name: Carbon Brief
+    url: https://www.carbonbrief.org/feed/
+    tier: 3
+    domains: [science, econ]
+    cap: 8
+    cadence: daily
+    notes: Climate and energy, with the underlying data.
+
+  - id: usgs_quakes
+    name: USGS earthquakes M4.5+
+    url: https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.atom
+    tier: 1
+    domains: [science, geo]
+    cap: 10
+    cadence: daily
+    notes: Physical events. Only surfaces on material human or economic consequence.
+
+  - id: arxiv_astro
+    name: arXiv astro-ph
+    url: http://export.arxiv.org/rss/astro-ph
+    tier: 1
+    domains: [science]
+    cap: 8
+    cadence: daily
+    weight: 0.5
+    notes: Very high volume. Extraordinary claims only.
+
+  # ---------------------------------------------------------------------------
+  # Cybersecurity. No tab of its own: routed per SKILL.md, tabs 2 to 7.
+  # ---------------------------------------------------------------------------
+
+  - id: krebs
+    name: Krebs on Security
+    url: https://krebsonsecurity.com/feed/
+    tier: 3
+    domains: [business, geo]
+    cap: 5
+    cadence: weekly
+
+  - id: the_record
+    name: The Record
+    url: https://therecord.media/feed
+    tier: 3
+    domains: [geo, business]
+    cap: 8
+    cadence: daily
+    notes: State-sponsored operations and attribution.
+
+  - id: risky_business
+    name: Risky Business News
+    url: https://risky.biz/feeds/risky-business-news/
+    tier: 3
+    domains: [business, geo, ai]
+    cap: 8
+    cadence: daily
+
+  - id: bleeping_computer
+    name: BleepingComputer
+    url: https://www.bleepingcomputer.com/feed/
+    tier: 3
+    domains: [business]
+    cap: 8
+    cadence: daily
+    weight: 0.7
+    notes: High volume, low selectivity. Only material breaches clear the bar.
+
+  - id: schneier
+    name: Schneier on Security
+    url: https://www.schneier.com/feed/atom/
+    tier: 4
+    domains: [business, ai, geo]
+    cap: 5
+    cadence: daily
+
+# -----------------------------------------------------------------------------
+# Known-dead and known-stale. Do not re-add without probing first.
+# Verified 2026-09-14.
+# -----------------------------------------------------------------------------
+retired:
+  - id: smol_ai_news
+    url: https://buttondown.com/ainews/rss
+    reason: "Feed responds 200 but latest item is 2025-04-25. Still widely recommended."
+  - id: semianalysis
+    url: https://semianalysis.com/feed/
+    reason: "200 but latest item 2025-09-16. Feed stale or gated; publication is not. Chip Letter and Fabricated Knowledge cover the beat."
+  - id: chip_huyen
+    url: https://huyenchip.com/feed.xml
+    reason: "Latest post 2025-01-16."
+  - id: qwen_blog
+    url: https://qwenlm.github.io/blog/index.xml
+    reason: "Latest item 2025-09-23. Qwen releases arrive via Hugging Face and Techmeme."
+  - id: asianometry
+    url: https://www.asianometry.com/feed
+    reason: "Latest post 2025-01-21."
+  - id: the_batch
+    url: https://www.deeplearning.ai/the-batch/feed/
+    reason: "404 on all probed paths."
+  - id: lawfare
+    url: https://www.lawfaremedia.org/feeds/articles.rss
+    reason: "403 to non-browser clients on all probed paths."
+  - id: cisa_advisories
+    url: https://www.cisa.gov/cybersecurity-advisories/all.xml
+    reason: "403. The Record and Risky Business cover the same ground."
+  - id: garbage_day
+    url: https://www.garbageday.email/feed
+    reason: "404 on all probed paths. Embedded covers internet culture."
+  - id: arxiv_ai
+    url: http://export.arxiv.org/rss/cs.AI
+    reason: "Returns a well-formed but empty feed. cs.CL and cs.LG carry the same work."
+  - id: reuters_direct
+    url: https://www.reuters.com/arc/outboundfeeds/rss/category/world/
+    reason: "404. Replaced by the Google News 24h query."
+  - id: ap_direct
+    url: https://apnews.com/hub/ap-top-news.rss
+    reason: "403. Replaced by the Google News 24h query."

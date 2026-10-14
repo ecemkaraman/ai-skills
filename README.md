@@ -26,7 +26,7 @@ From [AI with Ecem](https://aiwithecem.com): researching, building, testing and 
 **Claude Code:** copy a skill folder into your skills directory.
 
 ```bash
-git clone https://github.com/<your-username>/ai-skills.git
+git clone https://github.com/ecemkaraman/ai-skills.git
 cp -r ai-skills/skills/ai-system-audit ~/.claude/skills/
 ```
 

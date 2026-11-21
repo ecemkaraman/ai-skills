@@ -1,0 +1,8 @@
+.venv/
+raw/*
+work/*
+out/*
+!raw/.gitkeep
+!work/.gitkeep
+!out/.gitkeep
+.DS_Store

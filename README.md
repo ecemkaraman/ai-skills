@@ -21,6 +21,16 @@ From [AI with Ecem](https://aiwithecem.com): researching, building, testing and 
 | [sop-writer](skills/sop-writer) | Turns how you do something into a procedure someone (or an AI) can follow |
 | [self-review](skills/self-review) | Makes the AI grade its own output before you use it |
 
+## Starter kits
+
+Whole project folders: a skill plus the scripts, rules and settings around it.
+
+| Kit | What it does |
+|---|---|
+| [video-editing-engine](kits/video-editing-engine) | Edits talking-head Reels with Claude Code: plans the cut, waits for your approval, captions, checks its own render and exports |
+
+Copy a kit folder to start a new project; each kit's README has the setup.
+
 ## Install a skill
 
 **Claude Code:** copy a skill folder into your skills directory.

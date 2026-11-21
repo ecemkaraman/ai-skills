@@ -1,0 +1,19 @@
+{
+  "name": "Your brand",
+  "format": { "width": 1080, "height": 1920, "fps": 30 },
+  "safe_zone": { "top": 270, "bottom": 670, "sides": 65 },
+  "fonts": { "captions": "Inter", "titles": "Inter" },
+  "colors": {
+    "text": "#FFFFFF",
+    "accent": "#FFD166",
+    "caption_box": "#111111CC"
+  },
+  "captions": {
+    "words_per_group": 3,
+    "highlight_current_word": true,
+    "center_y": 0.6,
+    "size_px": 64
+  },
+  "audio": { "loudness_lufs": -14, "true_peak_db": -1.5 },
+  "pace": { "max_pause_s": 0.6, "cut_padding_s": 0.1 }
+}
